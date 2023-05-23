@@ -1,12 +1,18 @@
 import torch
 
 
-#####Load Fine-Tuned BERT-large
+#####Load Fine-Tuned BERT-larg
+
+#####For Question Answering we use the BertForQuestionAnswering class from the transformers library.
 from transformers import BertForQuestionAnswering
+
+
 model = BertForQuestionAnswering.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
 
 ####Load Tokenizer
 from transformers import BertTokenizer
+
+####Loading the tokenizer from bert-base-uncased.
 tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking-finetuned-squad')
 
 ####Ask a Question
@@ -24,7 +30,7 @@ print('The input has a total of {:} tokens.'.format(len(input_ids)))
 #####Print the Tokens with Token_IDs
 
 
-####To Get the Actual Token for an ID: From Transformers Import BertTokenizer Tokenizer
+####To Get the Actual TokenID: From Transformers Import BertTokenizer Tokenizer
 tokens = tokenizer.convert_ids_to_tokens(input_ids)
 for token, id in zip(tokens, input_ids):
 
@@ -38,36 +44,41 @@ for token, id in zip(tokens, input_ids):
     if id == tokenizer.sep_token_id:
         print('')
 
-#### Search the input_ids for the first instance of the [SEP] Tokesn
+#### Search the input_ids for the first instance of the [SEP] Tokens, “Segment” embeddings.
 sep_index = input_ids.index(tokenizer.sep_token_id)
+print('sep_index:',sep_index)
 
 ####The number of segment A tokens includes the [SEP] token istelf.
 num_seg_a= sep_index+1
-
+print('num_seg_a:', num_seg_a)
 
 #####The remainder are segment B
 num_seg_b = len(input_ids) - num_seg_a
-
+print('len(input_ids):',len(input_ids))
+print('num_seg_b:',num_seg_b)
 
 ####Construct the List of 0s an 1s.
 segment_ids = [0]*num_seg_a + [1]*num_seg_b
+print('segment_ids:', segment_ids)
 assert len(segment_ids) == len(input_ids)
 
-
+print('torch.tensor([input_ids])',torch.tensor([input_ids]))
+print('torch.tensor([segment_ids])',torch.tensor([segment_ids]))
 outputs = model(torch.tensor([input_ids]), token_type_ids= torch.tensor([segment_ids]),return_dict= True)
+print(outputs)
 start_scores = outputs.start_logits
+print('start_scores:',start_scores)
 end_scores = outputs.end_logits
+print('end_scores',end_scores)
 
 
 ####Find the tokens with the highest 'start' and 'end' scores. 
 answer_start = torch.argmax(start_scores)
+print('answer_start:',answer_start)
 answer_end = torch.argmax(end_scores)
-
-
+print('answer_end:',answer_end)
 answer = ' '.join(tokens[answer_start:answer_end])
 print('Answer: "' +answer+ '"')
-
-
 
 
 import matplotlib.pyplot as plt
@@ -112,12 +123,3 @@ df = pd.DataFrame(scores)
 g= sns.catplot(x='token_label',y='score',hue='marker',data=df,kind='bar',height=6, aspect=4)
 g.set_xticklabels(g.ax.get_xticklabels(),rotation=90,ha='center')
 g.ax.grid(True)
-
-
-
-
-
-
-
-
-
